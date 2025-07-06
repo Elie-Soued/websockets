@@ -65,7 +65,55 @@ export const parseFrame = (frame, masked) => {
   return { optCode, message: payload.toString() };
 };
 
-export const extractHeaders = (data) => {
+export const handshake = (data) => {
+  const headersIcoming = extractHeaders(data.toString());
+
+  if (
+    headersIcoming.Connection === "Upgrade" &&
+    headersIcoming.Upgrade === "websocket"
+  ) {
+    const GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+    const accept = crypto.hash(
+      "sha1",
+      headersIcoming["Sec-WebSocket-Key"] + GUID,
+      "base64"
+    );
+
+    let lines = "HTTP/1.1 101 Switching Protocols \r\n";
+
+    const headers = {
+      Upgrade: "websocket",
+      Connection: "Upgrade",
+      "Sec-WebSocket-Accept": `${accept}`,
+    };
+
+    Object.entries(headers).map(([key, value]) => {
+      lines = lines + `${key} : ${value} \r\n`;
+    });
+
+    lines = lines + "\r\n\r\n";
+
+    return {
+      confirmation: lines,
+      handshakeIsDone: true,
+    };
+  } else {
+    console.log("ouf");
+  }
+};
+
+export const prepareClientHeaders = (headers) => {
+  let lines = "GET /chat HTTP/1.1\r\n";
+
+  Object.entries(headers).map(([key, val]) => {
+    lines = lines + `${key} : ${val}` + "\r\n";
+  });
+
+  // Separating the header from the body
+  return lines + "\r\n\r\n";
+};
+
+const extractHeaders = (data) => {
   const headers = {};
 
   const lines = data.split("\r\n\r\n")[0];
