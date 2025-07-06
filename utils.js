@@ -171,31 +171,3 @@ const handlePayloadLength = (payloadLength) => {
     };
   }
 };
-
-/**
- * Details explanation can be found here : https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
- * Simple structure is as shown below:
- *
- * Byte 0
- * ------
- * FIN   : 1bit // boolean expressing if this is the last frame
- * RSV1  : 1bit // Must be zero unless an extension is negotiated that defines meanings for non-zero values.
- * RSV2  : 1bit // Same as above
- * RSV3  : 1bit // Same as above
- * opcode: 4bit // Metadata about the frame
- *
- * Byte1
- * -----
- * Masked : 1bit // Boolean expressing if the frame is masked
- * payload length : 7bits
- *
- * Byte 2 -5
- * ---------
- * Mask (4bytes)
- *
- *
- * Byte 6 - onwards
- * ----------------
- * Payload
- *
- */
