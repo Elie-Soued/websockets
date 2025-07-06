@@ -1,5 +1,6 @@
 import net from "net";
 import crypto from "crypto";
+import { parseFrame, creatingFrames } from "../utils.js";
 
 const createWebSocketClient = (port, host) => {
   const webSocketClient = {
@@ -39,14 +40,16 @@ const connect = function () {
     const firstline = chunk.toString().split("\r\n")[0].trim();
 
     if (firstline === "HTTP/1.1 101 Switching Protocols") {
-      const frame = creatingMaskedFrames("Hello server! I am the client :)");
-      console.log("Hello server! I am the client :)");
+      const frame = creatingFrames("Hello server! I am the client :)", true);
+      console.log(
+        "Message sent to the server : Hello server! I am the client :)"
+      );
       socket.write(frame);
     } else {
       const { optCode, message } = parseFrame(chunk);
 
       if (optCode != 0x08) {
-        console.log("coming from the server ", message);
+        console.log("Message coming from the server: ", message);
       }
     }
   });
@@ -56,110 +59,6 @@ const connect = function () {
   });
 
   return socket;
-};
-
-/**
- * Details explanation can be found here : https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
- * Simple structure is as shown below:
- *
- * Byte 0
- * ------
- * FIN   : 1bit // boolean expressing if this is the last frame
- * RSV1  : 1bit // Must be zero unless an extension is negotiated that defines meanings for non-zero values.
- * RSV2  : 1bit // Same as above
- * RSV3  : 1bit // Same as above
- * opcode: 4bit // Metadata about the frame
- *
- * Byte1
- * -----
- * Masked : 1bit // Boolean expressing if the frame is masked
- * payload length : 7bits
- *
- * Byte 2 -5
- * ---------
- * Mask (4bytes)
- *
- *
- * Byte 6 - onwards
- * ----------------
- * Payload
- *
- */
-
-const creatingMaskedFrames = (data) => {
-  const payload = Buffer.from(data);
-  const mask = crypto.randomBytes(4);
-
-  const { offset, payloadUpdatedLength } = handlePayloadLength(payload.length);
-
-  const frameLength = 2 + offset + mask.length + payload.length;
-  const frame = Buffer.alloc(frameLength);
-
-  frame[0] = 0x81; // 10000001
-  frame[1] = 0x80 | payloadUpdatedLength; // 10000000 + payload.length
-
-  if (payloadUpdatedLength === 126) {
-    frame.writeUInt16BE(payload.length, 2);
-  }
-
-  if (payloadUpdatedLength === 127) {
-    frame.writeBigUInt64BE(BigInt(payload.length), 2);
-  }
-
-  // Adding the mask at the 3rd position in the buffer
-  mask.copy(frame, 2 + offset);
-
-  for (let i = 0; i < payload.length; i++) {
-    payload[i] = payload[i] ^ mask[i % 4];
-  }
-
-  // Adding the masked payload after the mask
-  payload.copy(frame, 6 + offset);
-
-  return frame;
-};
-
-const handlePayloadLength = (payloadLength) => {
-  if (payloadLength <= 125) {
-    return {
-      payloadUpdatedLength: payloadLength,
-      offset: 0,
-    };
-  } else if (payloadLength <= 65535) {
-    return {
-      payloadUpdatedLength: 126,
-      offset: 2,
-    };
-  } else {
-    return {
-      payloadUpdatedLength: 127,
-      offset: 8,
-    };
-  }
-};
-
-const parseFrame = (frame) => {
-  const firstByte = frame[0];
-  const secondByte = frame[1];
-  const optCode = firstByte & 0x0f;
-  const payloadLength = secondByte & 0x7f;
-  const { offset } = getOffset(payloadLength);
-  let payload = frame.subarray(2 + offset);
-  return { optCode, message: payload.toString() };
-};
-
-const getOffset = (payloadLength) => {
-  let offset;
-
-  if (payloadLength <= 125) {
-    offset = 0;
-  } else if (payloadLength === 126) {
-    offset = 2;
-  } else if (payloadLength === 127) {
-    offset = 8;
-  }
-
-  return { offset };
 };
 
 const webSocketClient = createWebSocketClient(8081, "localhost");
