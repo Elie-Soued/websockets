@@ -1,5 +1,5 @@
 import net from "net";
-import { parseFrame, creatingFrames, handshake } from "../utils.js";
+import { parseFrame, creatingFrames, handshake } from "./utils.js";
 
 const server = net.createServer((socket) => {
   let handshakeDone = false;

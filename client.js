@@ -1,6 +1,6 @@
 import net from "net";
 import crypto from "crypto";
-import { parseFrame, creatingFrames, prepareClientHeaders } from "../utils.js";
+import { parseFrame, creatingFrames, prepareClientHeaders } from "./utils.js";
 
 const createWebSocketClient = (port, host) => {
   const webSocketClient = {

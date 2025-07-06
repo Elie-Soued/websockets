@@ -13,9 +13,9 @@ This is the implementation of the websocket protocol.
 git clone https://github.com/Elie-Soued/websockets.git
 ```
 
-3. Navigate to `/server`and run the script by doing `node websocketServer.js`
+3. Open a new terminal and run the server script by doing `node server.js`
 
-4. Navigate ot `/client`and run the script by doing `node websocketClient.js`
+4. Open a new terminal and run the client script by doing `node client.js`
 
 
 
